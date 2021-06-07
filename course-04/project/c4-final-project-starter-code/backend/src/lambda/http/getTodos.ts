@@ -5,7 +5,6 @@ import { getUserId } from "../utils";
 import * as AWS  from 'aws-sdk'
 
 
-const toDoTable='toDoTable'
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
@@ -15,7 +14,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   const items = await getTodos(userId)
 
   return {
-    statusCode: 201,
+    statusCode: 200,
     headers: {
       'Access-Control-Allow-Origin': '*'
     },
@@ -32,6 +31,8 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 async function getTodos(userId: string) {
   const docClient = new AWS.DynamoDB.DocumentClient()
+  const toDoTable='toDoTable'
+
   const result = await docClient.query({
     TableName: toDoTable,
     KeyConditionExpression: 'userId = :userId',
