@@ -4,7 +4,6 @@ import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } f
 
 import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
 
-import { TodoItem } from '../../models/TodoItem'
 
 import { getUserId } from "../utils";
 import * as AWS from 'aws-sdk'
@@ -20,11 +19,6 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   var docClient = new AWS.DynamoDB.DocumentClient()
   const toDoTable = 'toDoTable'
 
-
-
-
-
-
   var params = {
     TableName: toDoTable,
     Key: {
@@ -39,7 +33,18 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     },
     ReturnValues: "UPDATED_NEW"
   }
-  return docClient.update(params) 
+   docClient.update(params) 
+   return  {
+    statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': true
+
+    },
+    body: JSON.stringify({
+      updated : todoId,
+    })
+  }
 }
 
 

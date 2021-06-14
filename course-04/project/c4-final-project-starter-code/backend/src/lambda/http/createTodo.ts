@@ -2,6 +2,9 @@ import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
 
+
+
+
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 import { TodoItem } from '../../models/TodoItem'
 
@@ -11,16 +14,13 @@ import * as AWS from 'aws-sdk'
 
 
 
-
+//lambda function 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const newTodo: CreateTodoRequest = JSON.parse(event.body)
 
   // TODO: Implement creating a new TODO item
-  const authorization = event.headers.Authorization
-  const split = authorization.split(' ')
-  const jwtToken = split[1]
-
-  const newItem = await createTodo(newTodo, jwtToken)
+  const userId = getUserId(event)
+  const newItem = await createTodo(newTodo, userId)
 
   return {
     statusCode: 201,
@@ -34,11 +34,17 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   }
 
 }
-async function createTodo(CreateTodoRequest: CreateTodoRequest, jwtToken: string): Promise<TodoItem> {
 
+
+
+
+
+//businessLogic function  
+
+async function createTodo(CreateTodoRequest: CreateTodoRequest, userId: string): Promise<TodoItem> {
   const itemId = uuid.v4()
-  const userId = getUserId(jwtToken)
-
+  const attachmentUrl = getAttachmentUrl(itemId)
+  
   return await createTodoAccess({
     todoId: itemId,
     userId: userId,
@@ -46,13 +52,15 @@ async function createTodo(CreateTodoRequest: CreateTodoRequest, jwtToken: string
     createdAt: new Date().toISOString(),
     dueDate: CreateTodoRequest.dueDate,
     done: false,
-    attachmentUrl: null
+    attachmentUrl: attachmentUrl
   })
 }
 
+
+//DataAccess layer function 
 async function createTodoAccess(toDoitem: TodoItem): Promise<TodoItem> {
   const docClient = new AWS.DynamoDB.DocumentClient()
-  const toDoTable='toDoTable'
+  const toDoTable = 'toDoTable'
 
   await docClient.put({
     TableName: toDoTable,
@@ -61,5 +69,12 @@ async function createTodoAccess(toDoitem: TodoItem): Promise<TodoItem> {
 
   return toDoitem
 }
+
+//filestorage layer function 
+function getAttachmentUrl(itemId: string): string {
+  const bucketName = process.env.TODOS_S3_BUCKET
+  return `https://${bucketName}.s3.amazonaws.com/${itemId}`
+}
+
 
 
