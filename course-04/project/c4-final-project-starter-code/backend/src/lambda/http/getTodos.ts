@@ -12,7 +12,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   // TODO: Get all TODO items for a current user
   const userId = getUserId(event)
 
-  return getUserToDO(userId)
+  return getUserTodo(userId)
 
 
 }
@@ -22,7 +22,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 //businessslogic 
 
-async function getUserToDO(userId: string) {
+async function getUserTodo(userId: string) {
   const items = await getTodos(userId)
   return {
     statusCode: 200,

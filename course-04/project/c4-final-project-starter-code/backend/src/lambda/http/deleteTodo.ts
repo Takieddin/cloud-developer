@@ -32,5 +32,16 @@ async function deleteTodo(userId:string , todoId :string ) {
     },
    
   }
-  return await docClient.delete(params)   
+   await docClient.delete(params)   
+   return {
+    statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': true
+
+    },
+    body: JSON.stringify({
+      deleted : todoId,
+    })
+  }
 }

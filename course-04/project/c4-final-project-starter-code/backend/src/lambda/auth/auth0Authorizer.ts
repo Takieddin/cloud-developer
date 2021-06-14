@@ -3,11 +3,11 @@ import 'source-map-support/register'
 
 import { verify, decode } from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
-import Axios from 'axios'
+//import Axios from 'axios'
 import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
 
-import jwksClient from 'jwks-rsa';
+import { JwksClient } from 'jwks-rsa';
 
 
 const logger = createLogger('auth')
@@ -17,8 +17,7 @@ const logger = createLogger('auth')
 // To get this URL you need to go to an Auth0 page -> Show Advanced Settings -> Endpoints -> JSON Web Key Set
 const jwksUrl = 'https://ta9i.auth0.com/.well-known/jwks.json'
 
-const jwkClient = jwksClient({
-  strictSsl: true,
+const jwkClient = new JwksClient({
   jwksUri: jwksUrl //or wherever you have your configs
 });
 
@@ -72,22 +71,24 @@ async function verifyToken(authHeader: string): Promise<JwtPayload> {
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
 
 
-  
+
   const header = jwt.header;
   const kid = header.kid;
-  let cert;
 
-  jwkClient.getSigningKey(kid, (err, key) => {    
-    cert = key.publicKey;    
-  });
 
- return  verify(
+
+
+
+  const key = await jwkClient.getSigningKey(kid);
+  const cert = key.getPublicKey();
+
+  return verify(
     token,           // Token from an HTTP header to validate
     cert,            // A certificate copied from Auth0 website
     { algorithms: ['RS256'] } // We need to specify that we use the RS256 algorithm
-) as JwtPayload
+  ) as JwtPayload
 
-  
+
 }
 
 function getToken(authHeader: string): string {
