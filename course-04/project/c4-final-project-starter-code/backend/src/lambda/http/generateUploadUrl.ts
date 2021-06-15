@@ -34,7 +34,7 @@ async function getUrl(todoId: string) {
 
     },
     body: JSON.stringify({
-      UploadUrl: url,
+      uploadUrl: url,
       Expires: urlExpiration
     })
   }

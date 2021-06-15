@@ -18,6 +18,7 @@ provider:
     TODOS_TABLE: serverless-TodosApp-table
     TODOS_S3_BUCKET: serverless-todosapp-bucket
     SIGNED_URL_EXPIRATION: '300'
+    REGION: ${self:provider.region}
 #ffffff
 
 functions:
@@ -74,6 +75,7 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
+          - dynamodb:GetItem
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
@@ -89,6 +91,7 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
+          - dynamodb:GetItem
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
       - Effect: Allow
@@ -107,16 +110,15 @@ functions:
           cors: true
           authorizer: Auth
     iamRoleStatements:
-        
       - Effect: Allow
         Action:
-          - s3:PutObject
+          - s3:*
         Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
 
 resources:
   Resources:
     # TODO: Add any necessary AWS resources
-   
+
     TodosDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -125,7 +127,7 @@ resources:
             AttributeType: S
           - AttributeName: todoId
             AttributeType: S
-         
+
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
@@ -151,3 +153,17 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
+    
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyImagesPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*'
+        Bucket: !Ref TodossBucket

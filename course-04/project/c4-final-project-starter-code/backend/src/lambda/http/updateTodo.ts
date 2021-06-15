@@ -1,50 +1,81 @@
 import 'source-map-support/register'
 
-import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
+import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyHandler,
+  APIGatewayProxyResult
+} from 'aws-lambda'
 
 import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
 
-
-import { getUserId } from "../utils";
+import { getUserId } from '../utils'
 import * as AWS from 'aws-sdk'
 
+import { createLogger } from '../../utils/logger'
 
-
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+//lambda
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   const todoId = event.pathParameters.todoId
   const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
-    // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
+  // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
+  const logger = createLogger('updateTodo')
+
 
   const userId = getUserId(event)
-  var docClient = new AWS.DynamoDB.DocumentClient()
-  const toDoTable = 'toDoTable'
+  logger.info(`userId:${userId} todoId:${todoId}`)
+  return await updateTodo(todoId, userId, updatedTodo)
+}
 
-  var params = {
-    TableName: toDoTable,
+//businesslogic
+async function updateTodo(
+  todoId: string,
+  userId: string,
+  updatedTodo: UpdateTodoRequest
+) {
+  return await updateTodoAccess(todoId, userId, updatedTodo)
+}
+
+//dataAccess
+
+async function updateTodoAccess(
+  todoId: string,
+  userId: string,
+  updatedTodo: UpdateTodoRequest
+) {
+  var docClient = new AWS.DynamoDB.DocumentClient()
+  const toDosTable = process.env.TODOS_TABLE
+
+  const params = {
+    TableName: toDosTable,
     Key: {
-      "todoId": todoId,
-      "userId": userId
+      userId: userId,
+      todoId: todoId
     },
-    UpdateExpression: "set name = :name, dueDate=:dueDate, done=:done",
+    ExpressionAttributeNames: {
+      '#todo_name': 'name'
+    },
     ExpressionAttributeValues: {
-      name: updatedTodo.name,
-      dueDate: updatedTodo.dueDate,
-      done: updatedTodo.done,
+      ':name': updatedTodo.name,
+      ':dueDate': updatedTodo.dueDate,
+      ':done': updatedTodo.done
     },
-    ReturnValues: "UPDATED_NEW"
+    UpdateExpression:
+      'SET #todo_name = :name, dueDate = :dueDate, done = :done',
+    ReturnValues: 'ALL_NEW'
   }
-   docClient.update(params) 
-   return  {
-    statusCode: 200,
+
+  const result = await docClient.update(params).promise()
+
+  return {
+    statusCode: 204,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': true
-
     },
     body: JSON.stringify({
-      updated : todoId,
+      result
     })
   }
 }
-
-
