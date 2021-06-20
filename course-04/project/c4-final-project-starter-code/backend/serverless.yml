@@ -5,6 +5,7 @@ plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
 
+
 provider:
   name: aws
   runtime: nodejs12.x
@@ -57,6 +58,9 @@ functions:
           path: todos
           cors: true
           authorizer: Auth
+          request:
+              schema:
+                application/json: ${file(models/create-todo-request.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -72,6 +76,9 @@ functions:
           path: todos/{todoId}
           cors: true
           authorizer: Auth
+          request:
+            schema:
+              application/json: ${file(models/update-todo-request.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -114,6 +121,11 @@ functions:
         Action:
           - s3:*
         Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
 resources:
   Resources:
